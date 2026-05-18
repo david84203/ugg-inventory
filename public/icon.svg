@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
   <rect width="192" height="192" rx="32" fill="#f97316"/>
-  <text x="96" y="132" font-family="system-ui,-apple-system,sans-serif" font-size="88" font-weight="700" fill="#fff" text-anchor="middle">庫</text>
+  <g transform="translate(24,24) scale(6)" fill="#fff">
+    <path d="M20 2H4v2l9 4 9-4V2zM4 7v13c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V7l-9 4-9-4z"/>
+  </g>
 </svg>
