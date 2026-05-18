@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
-  collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, orderBy, query
+  collection, onSnapshot, addDoc, updateDoc, doc, orderBy, query
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage } from '../firebase/config'
@@ -12,7 +12,7 @@ export function useInventory() {
   useEffect(() => {
     const q = query(collection(db, 'inventory'), orderBy('name'))
     const unsub = onSnapshot(q, snap => {
-      setGames(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      setGames(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(g => !g.deleted))
       setLoading(false)
     })
     return unsub
@@ -42,11 +42,8 @@ export function useInventory() {
     await updateDoc(doc(db, 'inventory', id), { ...data, imageUrl })
   }
 
-  async function deleteGame(id, imageUrl) {
-    await deleteDoc(doc(db, 'inventory', id))
-    if (imageUrl) {
-      try { await deleteObject(ref(storage, imageUrl)) } catch {}
-    }
+  async function deleteGame(id) {
+    await updateDoc(doc(db, 'inventory', id), { deleted: true, deletedAt: Date.now() })
   }
 
   async function adjustStock(id, delta) {

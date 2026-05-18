@@ -82,7 +82,7 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
 
   async function handleDelete() {
     setSaving(true)
-    await onDelete(game.id, game.imageUrl)
+    await onDelete(game.id)
     setSaving(false)
     onClose()
   }
