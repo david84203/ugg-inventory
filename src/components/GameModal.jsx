@@ -1,14 +1,27 @@
 import { useState, useRef } from 'react'
 import { X, Upload, Trash2, Minus, Plus } from 'lucide-react'
 
+// 租金自動計算：每 500 元加 50 元
+function calcRental(price) {
+  const p = Number(price) || 0
+  return p > 0 ? Math.ceil(p / 500) * 50 : 0
+}
+
+// 從已有的 cost/price 反推折數（編輯舊資料時用）
+function inferDiscount(cost, price) {
+  const p = Number(price) || 0
+  const c = Number(cost) || 0
+  if (p <= 0) return 65
+  return Math.round(c / p * 100) || 65
+}
+
 const emptyForm = {
   name: '',
   players: '',
   minAge: '',
   stock: 0,
   price: '',
-  cost: '',
-  rental: '',
+  discountRate: 65,
 }
 
 export default function GameModal({ game, onSave, onDelete, onClose }) {
@@ -19,9 +32,12 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
     minAge: game.minAge || '',
     stock: game.stock ?? 0,
     price: game.price || '',
-    cost: game.cost || '',
-    rental: game.rental || '',
+    discountRate: inferDiscount(game.cost, game.price),
   } : emptyForm)
+
+  const price = Number(form.price) || 0
+  const rental = calcRental(price)
+  const cost = price > 0 ? Math.round(price * form.discountRate / 100) : 0
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(game?.imageUrl || '')
   const [saving, setSaving] = useState(false)
@@ -49,9 +65,9 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
       players: form.players.trim(),
       minAge: form.minAge.trim(),
       stock: Number(form.stock) || 0,
-      price: Number(form.price) || 0,
-      cost: Number(form.cost) || 0,
-      rental: Number(form.rental) || 0,
+      price,
+      cost,
+      rental,
     }
     try {
       await onSave(data, imageFile, game?.imageUrl)
@@ -160,6 +176,7 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
+            {/* 售價 */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">售價（NT$）</label>
               <input
@@ -171,27 +188,32 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
                 placeholder="0"
               />
             </div>
+
+            {/* 折數 → 自動算成本 */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">進貨成本</label>
-              <input
-                type="number"
-                min="0"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
-                value={form.cost}
-                onChange={e => set('cost', e.target.value)}
-                placeholder="0"
-              />
+              <label className="block text-xs font-medium text-gray-500 mb-1">進貨折數</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  className="w-full border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-sm focus:outline-none focus:border-orange-400"
+                  value={form.discountRate}
+                  onChange={e => set('discountRate', Number(e.target.value) || 65)}
+                />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+              </div>
+              <div className="text-xs text-gray-400 mt-1 pl-1">
+                = NT$ {cost.toLocaleString()}
+              </div>
             </div>
+
+            {/* 租金（自動計算） */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">租金</label>
-              <input
-                type="number"
-                min="0"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
-                value={form.rental}
-                onChange={e => set('rental', e.target.value)}
-                placeholder="0"
-              />
+              <label className="block text-xs font-medium text-gray-500 mb-1">租金（自動）</label>
+              <div className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 text-sm text-gray-600">
+                {rental > 0 ? `NT$ ${rental}` : '—'}
+              </div>
             </div>
           </div>
         </div>
