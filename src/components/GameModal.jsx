@@ -25,6 +25,7 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(game?.imageUrl || '')
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const fileRef = useRef()
 
@@ -42,6 +43,7 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
   async function handleSave() {
     if (!form.name.trim()) return
     setSaving(true)
+    setSaveError('')
     const data = {
       name: form.name.trim(),
       players: form.players.trim(),
@@ -51,9 +53,15 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
       cost: Number(form.cost) || 0,
       rental: Number(form.rental) || 0,
     }
-    await onSave(data, imageFile, game?.imageUrl)
-    setSaving(false)
-    onClose()
+    try {
+      await onSave(data, imageFile, game?.imageUrl)
+      setSaving(false)
+      onClose()
+    } catch (err) {
+      setSaving(false)
+      setSaveError(err?.message || '儲存失敗，請稍後再試')
+      console.error('Save error:', err)
+    }
   }
 
   async function handleDelete() {
@@ -187,6 +195,12 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
             </div>
           </div>
         </div>
+
+        {saveError && (
+          <div className="mx-5 mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600">
+            ⚠️ {saveError}
+          </div>
+        )}
 
         <div className="px-5 pb-5 flex gap-2">
           {isEdit && !confirmDelete && (
