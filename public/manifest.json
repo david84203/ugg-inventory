@@ -1,0 +1,17 @@
+{
+  "name": "烏嘎嘎倉儲管理",
+  "short_name": "倉儲系統",
+  "description": "桌遊庫存管理，追蹤每款遊戲數量與進貨成本",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
