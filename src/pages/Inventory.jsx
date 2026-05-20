@@ -5,6 +5,7 @@ import { usePurchaseCosts } from '../hooks/usePurchaseCosts'
 import GameCard from '../components/GameCard'
 import GameModal from '../components/GameModal'
 import PurchaseCostModal from '../components/PurchaseCostModal'
+import AddRentalGame from '../components/AddRentalGame'
 
 function formatMonth(yyyyMM) {
   const [year, month] = yyyyMM.split('-')
@@ -15,6 +16,7 @@ export default function Inventory() {
   const { games, loading, addGame, updateGame, deleteGame } = useInventory()
   const { records, thisMonth, thisMonthAmount } = usePurchaseCosts()
   const [search, setSearch] = useState('')
+  const [activeTab, setActiveTab] = useState('inventory')
   const [showModal, setShowModal] = useState(false)
   const [editGame, setEditGame] = useState(null)
   const [showCostHistory, setShowCostHistory] = useState(false)
@@ -57,6 +59,35 @@ export default function Inventory() {
       </header>
 
       <div className="p-6 max-w-7xl mx-auto">
+        {/* Tab 導航 */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('inventory')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+              activeTab === 'inventory'
+                ? 'bg-orange-500 text-white'
+                : 'bg-white text-gray-500 border border-gray-200 hover:border-orange-300'
+            }`}
+          >
+            庫存管理
+          </button>
+          <button
+            onClick={() => setActiveTab('add-rental')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+              activeTab === 'add-rental'
+                ? 'bg-orange-500 text-white'
+                : 'bg-white text-gray-500 border border-gray-200 hover:border-orange-300'
+            }`}
+          >
+            新增開盒遊戲
+          </button>
+        </div>
+
+        {activeTab === 'add-rental' && (
+          <AddRentalGame addGame={addGame} />
+        )}
+
+        {activeTab === 'inventory' && <>
         {/* 統計卡片 */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
@@ -133,6 +164,7 @@ export default function Inventory() {
             ))}
           </div>
         )}
+        </>}
       </div>
 
       {showModal && (
