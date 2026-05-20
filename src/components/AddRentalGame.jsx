@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Minus, Plus, Loader2, CheckCircle } from 'lucide-react'
+import { Search, Loader2, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react'
 
 function calcRental(price) {
   const p = Number(price) || 0
@@ -9,10 +9,23 @@ function calcRental(price) {
 const emptyForm = {
   name: '',
   players: '',
-  stock: 1,
+  englishName: '',
+  bggRating: '',
+  bestPlayers: '',
+  playTime: '',
+  complexity: '',
   price: '',
+  discountType: 'rate',
   discountRate: 65,
   bggUrl: '',
+  category: '',
+  tag1: '',
+  tag2: '',
+  tag3: '',
+  sticker: '',
+  youtubeLink: '',
+  source: '',
+  playerMode: '',
 }
 
 export default function AddRentalGame({ addGame }) {
@@ -24,10 +37,12 @@ export default function AddRentalGame({ addGame }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [showExtra, setShowExtra] = useState(false)
 
   const price = Number(form.price) || 0
   const rental = calcRental(price)
-  const cost = price > 0 ? Math.round(price * form.discountRate / 100) : 0
+  const isFree = form.discountType === 'free'
+  const cost = isFree ? 0 : (price > 0 ? Math.round(price * form.discountRate / 100) : 0)
 
   function set(key, value) {
     setForm(f => ({ ...f, [key]: value }))
@@ -53,6 +68,11 @@ export default function AddRentalGame({ addGame }) {
       setForm(f => ({
         ...f,
         players: data.players || f.players,
+        englishName: data.englishName || f.englishName,
+        bggRating: data.bggRating != null ? String(data.bggRating) : f.bggRating,
+        bestPlayers: data.bestPlayers || f.bestPlayers,
+        playTime: data.playTime != null ? String(data.playTime) : f.playTime,
+        complexity: data.complexity != null ? String(data.complexity) : f.complexity,
         bggUrl: bggInput.trim(),
       }))
     } catch {
@@ -69,11 +89,24 @@ export default function AddRentalGame({ addGame }) {
     const data = {
       name: form.name.trim(),
       players: form.players.trim(),
-      stock: Number(form.stock) || 1,
       price,
       cost,
       rental,
       bggUrl: form.bggUrl,
+      isFreeGift: isFree,
+      ...(form.englishName && { englishName: form.englishName }),
+      ...(form.bggRating && { bggRating: Number(form.bggRating) }),
+      ...(form.bestPlayers && { bestPlayers: form.bestPlayers }),
+      ...(form.playTime && { playTime: Number(form.playTime) }),
+      ...(form.complexity && { complexity: Number(form.complexity) }),
+      ...(form.category && { category: form.category }),
+      ...(form.tag1 && { tag1: form.tag1 }),
+      ...(form.tag2 && { tag2: form.tag2 }),
+      ...(form.tag3 && { tag3: form.tag3 }),
+      ...(form.sticker && { sticker: form.sticker }),
+      ...(form.youtubeLink && { youtubeLink: form.youtubeLink }),
+      ...(form.source && { source: form.source }),
+      ...(form.playerMode && { playerMode: form.playerMode }),
     }
     try {
       await addGame(data, null)
@@ -81,6 +114,7 @@ export default function AddRentalGame({ addGame }) {
       setForm(emptyForm)
       setBggInput('')
       setBggData(null)
+      setShowExtra(false)
       setTimeout(() => setSaved(false), 3000)
     } catch (err) {
       setSaveError(err?.message || '儲存失敗，請稍後再試')
@@ -112,9 +146,7 @@ export default function AddRentalGame({ addGame }) {
           </button>
         </div>
 
-        {fetchError && (
-          <p className="mt-2 text-xs text-red-500">{fetchError}</p>
-        )}
+        {fetchError && <p className="mt-2 text-xs text-red-500">{fetchError}</p>}
 
         {bggData && (
           <div className="mt-3 p-3 bg-blue-50 rounded-xl grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
@@ -148,33 +180,8 @@ export default function AddRentalGame({ addGame }) {
             className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
             value={form.players}
             onChange={e => set('players', e.target.value)}
-            placeholder="例：2-5"
+            placeholder="例：2-5（BGG 查詢自動填入）"
           />
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">庫存數量</label>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => set('stock', Math.max(1, Number(form.stock) - 1))}
-              className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition"
-            >
-              <Minus size={14} />
-            </button>
-            <input
-              type="number"
-              min="1"
-              className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm text-center focus:outline-none focus:border-orange-400"
-              value={form.stock}
-              onChange={e => set('stock', Number(e.target.value))}
-            />
-            <button
-              onClick={() => set('stock', Number(form.stock) + 1)}
-              className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition"
-            >
-              <Plus size={14} />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -193,21 +200,35 @@ export default function AddRentalGame({ addGame }) {
               placeholder="0"
             />
           </div>
+
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">進貨折數</label>
-            <div className="relative">
-              <input
-                type="number"
-                min="1"
-                max="100"
-                className="w-full border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-sm focus:outline-none focus:border-orange-400"
-                value={form.discountRate}
-                onChange={e => set('discountRate', Number(e.target.value) || 65)}
-              />
-              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+            <select
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400 bg-white"
+              value={form.discountType}
+              onChange={e => set('discountType', e.target.value)}
+            >
+              <option value="rate">自訂折數</option>
+              <option value="free">廠商贈送</option>
+            </select>
+            {!isFree && (
+              <div className="relative mt-1.5">
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  className="w-full border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-sm focus:outline-none focus:border-orange-400"
+                  value={form.discountRate}
+                  onChange={e => set('discountRate', Number(e.target.value) || 65)}
+                />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+              </div>
+            )}
+            <div className="text-xs text-gray-400 mt-1 pl-1">
+              {isFree ? '= NT$ 0（免費）' : `= NT$ ${cost.toLocaleString()}`}
             </div>
-            <div className="text-xs text-gray-400 mt-1 pl-1">= NT$ {cost.toLocaleString()}</div>
           </div>
+
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">租金（自動）</label>
             <div className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 text-sm text-gray-600">
@@ -217,9 +238,39 @@ export default function AddRentalGame({ addGame }) {
         </div>
       </div>
 
-      {saveError && (
-        <p className="text-xs text-red-500 px-1">{saveError}</p>
-      )}
+      {/* 其他資訊（選填） */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowExtra(v => !v)}
+          className="w-full flex items-center justify-between px-5 py-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+        >
+          <span>
+            其他資訊
+            <span className="ml-1.5 text-xs font-normal text-gray-400">（選填）</span>
+          </span>
+          {showExtra ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+        </button>
+
+        {showExtra && (
+          <div className="px-5 pb-5 grid grid-cols-2 gap-3 border-t border-gray-100 pt-4">
+            <OptInput label="分類" value={form.category} onChange={v => set('category', v)} placeholder="例：重策" />
+            <OptInput label="玩家模式" value={form.playerMode} onChange={v => set('playerMode', v)} placeholder="例：合作" />
+            <OptInput label="標籤 1" value={form.tag1} onChange={v => set('tag1', v)} placeholder="例：工人擺放" />
+            <OptInput label="標籤 2" value={form.tag2} onChange={v => set('tag2', v)} placeholder="例：引擎構築" />
+            <OptInput label="標籤 3" value={form.tag3} onChange={v => set('tag3', v)} placeholder="例：板塊拼放" />
+            <OptInput label="貼紙" value={form.sticker} onChange={v => set('sticker', v)} placeholder="例：v" />
+            <div className="col-span-2">
+              <OptInput label="教學連結" value={form.youtubeLink} onChange={v => set('youtubeLink', v)} placeholder="YouTube 教學網址" />
+            </div>
+            <div className="col-span-2">
+              <OptInput label="出處" value={form.source} onChange={v => set('source', v)} placeholder="例：XIAN在玩桌遊" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {saveError && <p className="text-xs text-red-500 px-1">{saveError}</p>}
 
       <button
         onClick={handleSave}
@@ -245,5 +296,19 @@ function InfoRow({ label, value }) {
       <span className="text-gray-400">{label}</span>
       <span className="text-gray-700 font-medium">{value}</span>
     </>
+  )
+}
+
+function OptInput({ label, value, onChange, placeholder }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+      <input
+        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
   )
 }
