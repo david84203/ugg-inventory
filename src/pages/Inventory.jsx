@@ -27,7 +27,8 @@ export default function Inventory() {
     return games.filter(g => g.name?.toLowerCase().includes(q))
   }, [games, search])
 
-  const totalGames = games.length
+  const EXCLUDED_CATEGORIES = ['牌套', '周邊']
+  const totalGames = games.filter(g => !EXCLUDED_CATEGORIES.includes(g.category)).length
   const totalStock = games.reduce((s, g) => s + (g.stock || 0), 0)
 
   function openAdd() {

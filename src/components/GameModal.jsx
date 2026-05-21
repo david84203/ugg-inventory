@@ -15,6 +15,8 @@ function inferDiscount(cost, price) {
   return Math.round(c / p * 100) || 65
 }
 
+const EXCLUDED_CATEGORIES = ['牌套', '周邊']
+
 const emptyForm = {
   name: '',
   players: '',
@@ -22,6 +24,7 @@ const emptyForm = {
   stock: 0,
   price: '',
   discountRate: 65,
+  category: '',
 }
 
 export default function GameModal({ game, onSave, onDelete, onClose }) {
@@ -33,10 +36,12 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
     stock: game.stock ?? 0,
     price: game.price || '',
     discountRate: inferDiscount(game.cost, game.price),
+    category: game.category || '',
   } : emptyForm)
 
   const price = Number(form.price) || 0
-  const rental = calcRental(price)
+  const isExcluded = EXCLUDED_CATEGORIES.includes(form.category)
+  const rental = isExcluded ? 0 : calcRental(price)
   const cost = price > 0 ? Math.round(price * form.discountRate / 100) : 0
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(game?.imageUrl || '')
@@ -68,6 +73,7 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
       price,
       cost,
       rental,
+      category: form.category || '',
     }
     try {
       await onSave(data, imageFile, game?.imageUrl)
@@ -117,9 +123,30 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
           </div>
 
+          {/* 類別 */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">類別</label>
+            <div className="flex gap-2">
+              {[['', '🎲 桌遊'], ['牌套', '🛡️ 牌套'], ['周邊', '🎁 周邊']].map(([val, label]) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => set('category', val)}
+                  className={`flex-1 py-1.5 rounded-xl text-sm font-medium border transition ${
+                    form.category === val
+                      ? 'bg-orange-500 text-white border-orange-500'
+                      : 'border-gray-200 text-gray-500 hover:border-orange-300'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* 遊戲名稱 */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">遊戲名稱 *</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">品名 *</label>
             <input
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
               value={form.name}
@@ -175,7 +202,7 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className={`grid gap-3 ${isExcluded ? 'grid-cols-2' : 'grid-cols-3'}`}>
             {/* 售價 */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">售價（NT$）</label>
@@ -208,13 +235,15 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
               </div>
             </div>
 
-            {/* 租金（自動計算） */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">租金（自動）</label>
-              <div className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 text-sm text-gray-600">
-                {rental > 0 ? `NT$ ${rental}` : '—'}
+            {/* 租金（桌遊專用） */}
+            {!isExcluded && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">租金（自動）</label>
+                <div className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 text-sm text-gray-600">
+                  {rental > 0 ? `NT$ ${rental}` : '—'}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
