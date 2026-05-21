@@ -32,7 +32,7 @@ export function useInventory() {
   }
 
   async function updateGame(id, data, imageFile, oldImageUrl) {
-    let imageUrl = oldImageUrl
+    let imageUrl = oldImageUrl || ''
     if (imageFile) {
       imageUrl = await uploadImage(imageFile)
       if (oldImageUrl) {
