@@ -31,11 +31,6 @@ export default function Inventory() {
   const totalGames = games.filter(g => !EXCLUDED_CATEGORIES.includes(g.category)).length
   const totalStock = games.reduce((s, g) => s + (g.stock || 0), 0)
 
-  function openAdd() {
-    setEditGame(null)
-    setShowModal(true)
-  }
-
   function openEdit(game) {
     setEditGame(game)
     setShowModal(true)
@@ -143,12 +138,14 @@ export default function Inventory() {
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <button
-            onClick={openAdd}
-            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-medium hover:bg-orange-600 transition"
+          <a
+            href="https://ugg-order-parser.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 text-white rounded-xl text-sm font-medium hover:bg-gray-900 transition"
           >
-            <Plus size={16} /> 新增遊戲
-          </button>
+            ➡️ 前往進貨系統新增
+          </a>
         </div>
 
         {/* 遊戲卡片網格 */}

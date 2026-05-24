@@ -200,6 +200,9 @@ export default function GameModal({ game, onSave, onDelete, onClose }) {
                 <Plus size={14} />
               </button>
             </div>
+            <div className="text-[11px] text-amber-500 mt-1.5 flex items-start leading-tight">
+              ⚠️ 進貨請勿在此增加，會漏算成本！此處僅供盤點修正使用
+            </div>
           </div>
 
           <div className={`grid gap-3 ${isExcluded ? 'grid-cols-2' : 'grid-cols-3'}`}>
