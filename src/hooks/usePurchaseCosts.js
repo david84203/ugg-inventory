@@ -14,9 +14,18 @@ export function usePurchaseCosts() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const q = query(collection(db, 'purchaseCosts'), orderBy('__name__', 'desc'))
+    // 從 purchaseOrders 逐筆明細加總為月份合計
+    const q = query(collection(db, 'purchaseOrders'), orderBy('orderDate', 'desc'))
     const unsub = onSnapshot(q, snap => {
-      setRecords(snap.docs.map(d => ({ month: d.id, amount: d.data().amount ?? 0 })))
+      const byMonth = {}
+      snap.docs.forEach(d => {
+        const data = d.data()
+        const month = data.monthKey || (data.orderDate || '').slice(0, 7)
+        if (!month) return
+        byMonth[month] = (byMonth[month] || 0) + (data.totalAmount || 0)
+      })
+      const grouped = Object.entries(byMonth).map(([month, amount]) => ({ month, amount }))
+      setRecords(grouped)
       setLoading(false)
     })
     return unsub
