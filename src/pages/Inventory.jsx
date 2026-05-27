@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Search, Plus, Package, BoxesIcon, DollarSign, History } from 'lucide-react'
+import { Search, Package, BoxesIcon, DollarSign, History, ShieldCheck } from 'lucide-react'
 import { useInventory } from '../hooks/useInventory'
 import { usePurchaseCosts } from '../hooks/usePurchaseCosts'
 import GameCard from '../components/GameCard'
@@ -16,19 +16,29 @@ export default function Inventory() {
   const { games, loading, addGame, updateGame, deleteGame } = useInventory()
   const { records, thisMonth, thisMonthAmount } = usePurchaseCosts()
   const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState(null) // null=全部, '桌遊'=桌遊, '牌套'=牌套
   const [activeTab, setActiveTab] = useState('inventory')
   const [showModal, setShowModal] = useState(false)
   const [editGame, setEditGame] = useState(null)
   const [showCostHistory, setShowCostHistory] = useState(false)
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q) return games
-    return games.filter(g => g.name?.toLowerCase().includes(q))
-  }, [games, search])
-
   const EXCLUDED_CATEGORIES = ['牌套', '周邊']
+
+  const filtered = useMemo(() => {
+    let list = games
+    if (categoryFilter === '桌遊') {
+      list = list.filter(g => !EXCLUDED_CATEGORIES.includes(g.category))
+    } else if (categoryFilter === '牌套') {
+      list = list.filter(g => g.category === '牌套')
+    }
+    const q = search.trim().toLowerCase()
+    if (q) list = list.filter(g => g.name?.toLowerCase().includes(q))
+    return list
+  }, [games, search, categoryFilter])
+
   const totalGames = games.filter(g => !EXCLUDED_CATEGORIES.includes(g.category)).length
+  const totalSleeves = games.filter(g => g.category === '牌套').length
+  const totalSleeveStock = games.filter(g => g.category === '牌套').reduce((s, g) => s + (g.stock || 0), 0)
   const totalStock = games.reduce((s, g) => s + (g.stock || 0), 0)
 
   function openEdit(game) {
@@ -85,22 +95,63 @@ export default function Inventory() {
 
         {activeTab === 'inventory' && <>
         {/* 統計卡片 */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          {/* 桌遊款數（可點擊篩選） */}
+          <button
+            onClick={() => setCategoryFilter(f => f === '桌遊' ? null : '桌遊')}
+            className={`rounded-2xl p-4 shadow-sm border transition-all text-left w-full ${
+              categoryFilter === '桌遊'
+                ? 'bg-orange-500 border-orange-500'
+                : 'bg-white border-gray-100 hover:border-orange-300'
+            }`}
+          >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
-                <BoxesIcon size={18} className="text-orange-500" />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                categoryFilter === '桌遊' ? 'bg-orange-400' : 'bg-orange-50'
+              }`}>
+                <BoxesIcon size={18} className={categoryFilter === '桌遊' ? 'text-white' : 'text-orange-500'} />
               </div>
               <div>
-                <div className="text-xs text-gray-400">遊戲款數</div>
-                <div className="text-2xl font-bold text-gray-800">{totalGames}</div>
+                <div className={`text-xs ${categoryFilter === '桌遊' ? 'text-orange-100' : 'text-gray-400'}`}>桌遊款數</div>
+                <div className={`text-2xl font-bold ${categoryFilter === '桌遊' ? 'text-white' : 'text-gray-800'}`}>{totalGames}</div>
               </div>
             </div>
-          </div>
+          </button>
+
+          {/* 牌套款數（可點擊篩選） */}
+          <button
+            onClick={() => setCategoryFilter(f => f === '牌套' ? null : '牌套')}
+            className={`rounded-2xl p-4 shadow-sm border transition-all text-left w-full ${
+              categoryFilter === '牌套'
+                ? 'bg-blue-500 border-blue-500'
+                : 'bg-white border-gray-100 hover:border-blue-300'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                categoryFilter === '牌套' ? 'bg-blue-400' : 'bg-blue-50'
+              }`}>
+                <ShieldCheck size={18} className={categoryFilter === '牌套' ? 'text-white' : 'text-blue-500'} />
+              </div>
+              <div>
+                <div className={`text-xs ${categoryFilter === '牌套' ? 'text-blue-100' : 'text-gray-400'}`}>
+                  牌套款數
+                </div>
+                <div className={`text-2xl font-bold ${categoryFilter === '牌套' ? 'text-white' : 'text-gray-800'}`}>
+                  {totalSleeves}
+                  {categoryFilter === '牌套' && (
+                    <span className="text-sm font-normal ml-1.5 opacity-80">庫存 {totalSleeveStock}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </button>
+
+          {/* 總庫存 */}
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <Package size={18} className="text-blue-500" />
+              <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                <Package size={18} className="text-purple-500" />
               </div>
               <div>
                 <div className="text-xs text-gray-400">總庫存數</div>
@@ -108,6 +159,8 @@ export default function Inventory() {
               </div>
             </div>
           </div>
+
+          {/* 進貨成本 */}
           <button
             onClick={() => setShowCostHistory(true)}
             className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:border-green-300 hover:shadow-md transition-all text-left w-full"
