@@ -1,18 +1,30 @@
 import { useState, useEffect } from 'react'
 import {
-  collection, onSnapshot, addDoc, updateDoc, doc, orderBy, query
+  collection, onSnapshot, addDoc, updateDoc, doc, query
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage } from '../firebase/config'
+
+function sortByPurchaseDate(games) {
+  return [...games].sort((a, b) => {
+    const da = a.lastPurchaseDate || ''
+    const db_ = b.lastPurchaseDate || ''
+    if (da && db_) return db_.localeCompare(da) // 兩者都有日期：新的在前
+    if (da) return -1                            // 只有 a 有日期：a 在前
+    if (db_) return 1                            // 只有 b 有日期：b 在前
+    return (a.name || '').localeCompare(b.name || '', 'zh-TW') // 都沒日期：按名稱
+  })
+}
 
 export function useInventory() {
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const q = query(collection(db, 'inventory'), orderBy('name'))
+    const q = query(collection(db, 'inventory'))
     const unsub = onSnapshot(q, snap => {
-      setGames(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(g => !g.deleted))
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(g => !g.deleted)
+      setGames(sortByPurchaseDate(list))
       setLoading(false)
     })
     return unsub
