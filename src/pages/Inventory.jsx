@@ -17,6 +17,9 @@ export default function Inventory() {
   const { records, thisMonth, thisMonthAmount } = usePurchaseCosts()
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState(null) // null=全部, '桌遊'=桌遊, '牌套'=牌套
+  const [priceMin, setPriceMin] = useState('')
+  const [priceMax, setPriceMax] = useState('')
+  const [priceMode, setPriceMode] = useState('original') // 'original' | 'member'
   const [activeTab, setActiveTab] = useState('inventory')
   const [showModal, setShowModal] = useState(false)
   const [editGame, setEditGame] = useState(null)
@@ -33,8 +36,20 @@ export default function Inventory() {
     }
     const q = search.trim().toLowerCase()
     if (q) list = list.filter(g => g.name?.toLowerCase().includes(q))
+    const min = priceMin !== '' ? Number(priceMin) : null
+    const max = priceMax !== '' ? Number(priceMax) : null
+    if (min !== null || max !== null) {
+      list = list.filter(g => {
+        const p = priceMode === 'member'
+          ? Math.floor((g.price || 0) * 0.9)
+          : (g.price || 0)
+        if (min !== null && p < min) return false
+        if (max !== null && p > max) return false
+        return true
+      })
+    }
     return list
-  }, [games, search, categoryFilter])
+  }, [games, search, categoryFilter, priceMin, priceMax, priceMode])
 
   const totalGames = games.filter(g => !EXCLUDED_CATEGORIES.includes(g.category)).length
   const totalSleeves = games.filter(g => g.category === '牌套').length
@@ -181,7 +196,7 @@ export default function Inventory() {
         </div>
 
         {/* 搜尋 + 新增 */}
-        <div className="flex gap-3 mb-6">
+        <div className="flex gap-3 mb-3">
           <div className="flex-1 relative">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -199,6 +214,62 @@ export default function Inventory() {
           >
             ➡️ 前往進貨系統新增
           </a>
+        </div>
+
+        {/* 價格區間搜尋 */}
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
+          <span className="text-xs text-gray-500 shrink-0">價格區間</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-400 text-xs">$</span>
+            <input
+              type="number"
+              min="0"
+              className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-orange-400"
+              placeholder="最低"
+              value={priceMin}
+              onChange={e => setPriceMin(e.target.value)}
+            />
+            <span className="text-gray-400 text-xs">～</span>
+            <input
+              type="number"
+              min="0"
+              className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-orange-400"
+              placeholder="最高"
+              value={priceMax}
+              onChange={e => setPriceMax(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setPriceMode('original')}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
+                priceMode === 'original' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              原價
+            </button>
+            <button
+              onClick={() => setPriceMode('member')}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
+                priceMode === 'member' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              會員9折
+            </button>
+          </div>
+          {(priceMin || priceMax) && (
+            <button
+              onClick={() => { setPriceMin(''); setPriceMax('') }}
+              className="text-xs text-gray-400 hover:text-red-400 transition"
+            >
+              清除
+            </button>
+          )}
+          {(priceMin || priceMax) && (
+            <span className="text-xs text-gray-400">
+              找到 {filtered.length} 款
+            </span>
+          )}
         </div>
 
         {/* 遊戲卡片網格 */}
