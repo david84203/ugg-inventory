@@ -19,7 +19,8 @@ export default function Inventory() {
   const [categoryFilter, setCategoryFilter] = useState(null) // null=全部, '桌遊'=桌遊, '牌套'=牌套
   const [priceMin, setPriceMin] = useState('')
   const [priceMax, setPriceMax] = useState('')
-  const [priceMode, setPriceMode] = useState('original') // 'original' | 'member'
+  const [priceMode, setPriceMode] = useState('original') // 'original' | 'member' | 'custom'
+  const [customDiscount, setCustomDiscount] = useState('')
   const [activeTab, setActiveTab] = useState('inventory')
   const [showModal, setShowModal] = useState(false)
   const [editGame, setEditGame] = useState(null)
@@ -42,6 +43,8 @@ export default function Inventory() {
       list = list.filter(g => {
         const p = priceMode === 'member'
           ? Math.floor((g.price || 0) * 0.9)
+          : priceMode === 'custom' && customDiscount !== ''
+          ? Math.floor((g.price || 0) * (parseFloat(customDiscount) / 10))
           : (g.price || 0)
         if (min !== null && p < min) return false
         if (max !== null && p > max) return false
@@ -49,7 +52,7 @@ export default function Inventory() {
       })
     }
     return list
-  }, [games, search, categoryFilter, priceMin, priceMax, priceMode])
+  }, [games, search, categoryFilter, priceMin, priceMax, priceMode, customDiscount])
 
   const totalGames = games.filter(g => !EXCLUDED_CATEGORIES.includes(g.category)).length
   const totalSleeves = games.filter(g => g.category === '牌套').length
@@ -256,10 +259,33 @@ export default function Inventory() {
             >
               會員9折
             </button>
+            <button
+              onClick={() => setPriceMode('custom')}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
+                priceMode === 'custom' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              自訂折
+            </button>
           </div>
+          {priceMode === 'custom' && (
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="1"
+                max="9.9"
+                step="0.1"
+                className="w-14 px-2 py-1.5 border border-blue-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-400 text-center"
+                placeholder="折數"
+                value={customDiscount}
+                onChange={e => setCustomDiscount(e.target.value)}
+              />
+              <span className="text-xs text-gray-500">折</span>
+            </div>
+          )}
           {(priceMin || priceMax) && (
             <button
-              onClick={() => { setPriceMin(''); setPriceMax('') }}
+              onClick={() => { setPriceMin(''); setPriceMax(''); setCustomDiscount('') }}
               className="text-xs text-gray-400 hover:text-red-400 transition"
             >
               清除
