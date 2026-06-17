@@ -48,7 +48,8 @@ export function useInventory() {
     if (imageFile) {
       imageUrl = await uploadImage(imageFile)
       if (oldImageUrl) {
-        try { await deleteObject(ref(storage, oldImageUrl)) } catch {}
+        try { await deleteObject(ref(storage, oldImageUrl)) }
+        catch (err) { console.warn('刪除舊圖失敗（不影響更新）：', err) }
       }
     }
     await updateDoc(doc(db, 'inventory', id), { ...data, imageUrl })
